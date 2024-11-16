@@ -4,7 +4,7 @@ from typing import Dict, Optional, Tuple
 import yaml
 from datetime import datetime, timezone
 
-from ..api.electricity_maps import ElectricityMapsAPI
+from api.electricity_maps import ElectricityMapsAPI
 
 logger = logging.getLogger(__name__)
 
