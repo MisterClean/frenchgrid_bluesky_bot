@@ -1,14 +1,15 @@
 # French Grid Bluesky Bot
 
-A Bluesky bot that compares electricity generation methods and CO2 emissions between European countries. Data is sourced from Electricity Maps.
+A Bluesky bot that compares electricity generation methods and CO2 emissions between European countries using real-time data from the Electricity Maps API.
 
 ## Features
 
 - Posts regular updates about electricity generation methods and CO2 emissions
+- Uses real-time data from Electricity Maps API
 - Compares two countries at a time
 - Shows top 3 electricity generation sources for each country
 - Includes CO2 emissions data with visual indicators
-- Saves historical data through an API (optional)
+- Displays renewable and fossil-free percentages
 
 ## Project Structure
 
@@ -21,10 +22,10 @@ frenchgrid_bluesky_bot/
 │   ├── config.py         # Configuration management
 │   ├── run.py           # Main entry point
 │   ├── data/            # Data files
-│   │   ├── zones.csv    # Country division configurations
-│   │   └── probabilities.csv  # Energy generation probabilities
+│   │   └── zones.csv    # Country division configurations
 │   ├── energy_data/     # Energy data processing
 │   │   ├── __init__.py
+│   │   ├── electricity_maps_client.py  # Electricity Maps API client
 │   │   ├── data_fetcher.py  # Energy data collection
 │   │   └── matchup.py   # Country matchup selection
 │   └── social/          # Social network integration
@@ -56,13 +57,25 @@ pip install -r requirements.txt
      BLUESKY_HANDLE=your.handle.bsky.social
      BLUESKY_PASSWORD=your_password
 
-     # API configuration
-     API_IP=api_ip_address
-     API_PORT=api_port
+     # Electricity Maps API
+     ELECTRICITY_MAPS_TOKEN=your_api_token
 
      # Features
-     SAVE_POSTS=false  # Set to true to enable saving posts to API
+     SAVE_POSTS=false
      ```
+
+### Electricity Maps API Access
+
+To use this bot, you need an API token from Electricity Maps:
+
+1. Sign up at [Electricity Maps API Portal](https://api-portal.electricitymaps.com)
+2. Create an API token
+3. Add the token to your `.env` file as `ELECTRICITY_MAPS_TOKEN`
+
+The bot uses the following Electricity Maps API endpoints:
+- `/v3/carbon-intensity/latest` - Get real-time carbon intensity data
+- `/v3/power-breakdown/latest` - Get power generation breakdown
+- `/v3/health` - Check API status
 
 ## Running the Bot
 
@@ -85,22 +98,30 @@ The project follows Python best practices and conventions:
 ### Key Components
 
 - `src/config.py`: Configuration management using environment variables
-- `src/run.py`: Main entry point and orchestration
-- `src/energy_data/`: Energy data collection and processing
-  - `data_fetcher.py`: Fetches and processes energy generation data
-  - `matchup.py`: Handles country matchup selection
-- `src/social/`: Social network integration
-  - `bluesky_client.py`: Handles Bluesky post creation and publishing
+- `src/energy_data/electricity_maps_client.py`: Client for Electricity Maps API
+- `src/energy_data/data_fetcher.py`: Processes energy generation data
+- `src/energy_data/matchup.py`: Handles country matchup selection
+- `src/social/bluesky_client.py`: Handles Bluesky post creation and publishing
 
-### Configuration
+### Data Flow
 
-The bot uses environment variables for configuration, loaded from a `.env` file:
+1. The bot selects two countries to compare from the configured divisions
+2. For each country, it fetches:
+   - Real-time carbon intensity
+   - Power generation breakdown
+   - Renewable and fossil-free percentages
+3. The data is processed to identify:
+   - Top 3 power sources and their percentages
+   - Current CO2 emissions
+4. A formatted post is created and published to Bluesky
 
-- `BLUESKY_HANDLE`: Your Bluesky handle (required)
-- `BLUESKY_PASSWORD`: Your Bluesky password (required)
-- `API_IP`: API server IP address (required if SAVE_POSTS=true)
-- `API_PORT`: API server port (required if SAVE_POSTS=true)
-- `SAVE_POSTS`: Enable/disable saving posts to API (optional, default: false)
+### Error Handling
+
+The bot includes comprehensive error handling:
+- API health checks before data fetching
+- Validation of required configuration
+- Graceful handling of missing or invalid data
+- Detailed logging for troubleshooting
 
 ## Contributing
 

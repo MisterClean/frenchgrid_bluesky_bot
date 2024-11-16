@@ -15,9 +15,8 @@ class Config:
     BLUESKY_HANDLE: str = os.getenv('BLUESKY_HANDLE', '')
     BLUESKY_PASSWORD: str = os.getenv('BLUESKY_PASSWORD', '')
     
-    # API configuration
-    API_IP: Optional[str] = os.getenv('API_IP')
-    API_PORT: Optional[str] = os.getenv('API_PORT')
+    # Electricity Maps API
+    ELECTRICITY_MAPS_TOKEN: str = os.getenv('ELECTRICITY_MAPS_TOKEN', '')
     
     # Features
     SAVE_POSTS: bool = os.getenv('SAVE_POSTS', 'false').lower() == 'true'
@@ -36,8 +35,8 @@ class Config:
                 "BLUESKY_PASSWORD in your .env file"
             )
         
-        if cls.SAVE_POSTS and (not cls.API_IP or not cls.API_PORT):
+        if not cls.ELECTRICITY_MAPS_TOKEN:
             raise ValueError(
-                "API configuration is required when SAVE_POSTS is enabled. "
-                "Please set API_IP and API_PORT in your .env file"
+                "Missing Electricity Maps API token. Sign up at "
+                "https://api-portal.electricitymaps.com and add token to .env file"
             )

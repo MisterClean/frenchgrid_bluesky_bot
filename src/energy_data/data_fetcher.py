@@ -1,57 +1,96 @@
 """
-Module for fetching and processing energy generation data.
+Module for fetching and processing energy generation data from Electricity Maps API.
 """
-import pandas as pd
-import os
 from typing import List, Dict, Any
-from collections import defaultdict
+import logging
+from .electricity_maps_client import ElectricityMapsClient
+
+logger = logging.getLogger(__name__)
+
+def calculate_top_sources(power_production: Dict[str, float]) -> List[tuple]:
+    """
+    Calculate the top 3 power sources and their percentages.
+    
+    Args:
+        power_production: Dictionary of power sources and their values
+        
+    Returns:
+        List of tuples containing (source, value, percentage)
+    """
+    # Filter out None values and zero production
+    valid_sources = {
+        source: value for source, value in power_production.items()
+        if value is not None and value > 0
+    }
+    
+    total = sum(valid_sources.values())
+    if total == 0:
+        return []
+    
+    # Calculate percentages and sort by production
+    sources_with_pct = [
+        (source, value, int((value / total) * 100))
+        for source, value in valid_sources.items()
+    ]
+    
+    return sorted(sources_with_pct, key=lambda x: x[1], reverse=True)[:3]
 
 def get_data(zones: List[str]) -> List[Dict[str, Any]]:
     """
-    Fetch and process energy generation data for specified zones.
+    Fetch and process energy generation data for specified zones from Electricity Maps API.
     
     Args:
         zones: List of country/zone codes to fetch data for
         
     Returns:
         List of dictionaries containing processed energy data for each zone
+        
+    Raises:
+        requests.exceptions.RequestException: If API request fails
     """
-    # TODO: Implement actual API call to fetch real-time data
-    # For now, using sample data for demonstration
-    wdb = os.getcwd()
-    probabilities = pd.read_csv(f"{wdb}/src/data/probabilities.csv")
+    client = ElectricityMapsClient()
+    
+    # Check API health
+    if not client.check_health():
+        raise RuntimeError("Electricity Maps API is not healthy")
     
     result = []
     for zone in zones:
-        zone_data = probabilities[probabilities['zone'] == zone]
-        if zone_data.empty:
+        try:
+            # Get zone data
+            data = client.get_zone_data(zone)
+            
+            # Get power production breakdown
+            production = data.get('powerProduction', {})
+            if not production:
+                logger.warning(f"No power production data available for zone {zone}")
+                continue
+            
+            # Calculate top 3 sources
+            top3 = calculate_top_sources(production)
+            if not top3:
+                logger.warning(f"No valid power sources found for zone {zone}")
+                continue
+            
+            # Get carbon intensity
+            co2 = data.get('carbonIntensity')
+            if co2 is None:
+                logger.warning(f"No carbon intensity data available for zone {zone}")
+                continue
+            
+            result.append({
+                "country": zone,
+                "co2": int(co2),
+                "top3": top3,
+                "renewable_pct": data.get('renewablePercentage', 0),
+                "fossil_free_pct": data.get('fossilFreePercentage', 0)
+            })
+            
+        except Exception as e:
+            logger.error(f"Error fetching data for zone {zone}: {str(e)}")
             continue
-            
-        # Get top 3 generation methods
-        top3 = []
-        methods_data = defaultdict(float)
-        
-        for _, row in zone_data.iterrows():
-            method = row['method']
-            probability = row['probability']
-            methods_data[method] += probability
-            
-        sorted_methods = sorted(
-            methods_data.items(),
-            key=lambda x: x[1],
-            reverse=True
-        )
-        
-        for method, prob in sorted_methods[:3]:
-            top3.append((method, prob, int(prob * 100)))
-            
-        # Calculate CO2 emissions (simplified example)
-        co2 = sum(prob * 100 for _, prob, _ in top3) / 3
-        
-        result.append({
-            "country": zone,
-            "co2": int(co2),
-            "top3": top3
-        })
-        
+    
+    if not result:
+        raise ValueError("No valid data could be fetched for any zone")
+    
     return result

@@ -4,7 +4,6 @@ Main entry point for the French Grid Bluesky Bot.
 import pandas as pd
 import os
 from os import getcwd
-import requests
 import logging
 from typing import Dict, Any
 from energy_data.matchup import get_matchup
@@ -25,11 +24,6 @@ class EnergyComparison:
     """
     def __init__(self, division: str):
         self.division = division
-        if not Config.API_IP or not Config.API_PORT:
-            raise ValueError("API_IP and API_PORT must be set in .env file")
-        self.url = f"http://{Config.API_IP}:{Config.API_PORT}"
-        self.latest_endpoint = "/getlatestmatchup"
-        self.post_endpoint = "/entry"
         self.zones = None
         self.data = None
         self.payload = None
@@ -65,46 +59,6 @@ class EnergyComparison:
             logger.error(f"Error sending Bluesky post: {str(e)}")
             raise
 
-    def save_entry(self) -> None:
-        """Save the entry to the API if SAVE_POSTS is enabled."""
-        if not self.payload:
-            raise ValueError("Payload not set. Call send_post first.")
-        
-        try:
-            # Get latest matchup
-            latest_matchup_url = self.url + self.latest_endpoint
-            response = requests.get(url=latest_matchup_url)
-            response.raise_for_status()
-            latest_matchup = response.json().get('matchup', 0)
-
-            # Post entries
-            post_url = self.url + self.post_endpoint
-            for country_index, data in self.payload.items():
-                payload = {
-                    "division": self.division,
-                    "country": data.get('country'),
-                    "ts": int(data.get('ts')),
-                    "matchup": latest_matchup + 1,
-                    "co2": int(data.get('co2')),
-                    "way_1": data.get('way_1'),
-                    "way_1_pc": int(data.get('way_1_pc')),
-                    "way_2": data.get('way_2'),
-                    "way_2_pc": data.get('way_2_pc'),
-                    "way_3": data.get('way_3'),
-                    "way_3_pc": data.get('way_3_pc'),
-                    "post_uri": data.get('post_uri')
-                }
-                response = requests.post(
-                    url=post_url,
-                    json=payload,
-                    headers={"Content-Type": "application/json"}
-                )
-                response.raise_for_status()
-            logger.info("Successfully saved entries to API")
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Error saving entry to API: {str(e)}")
-            raise
-
 def main() -> None:
     """Main function to run the energy comparison bot."""
     try:
@@ -123,9 +77,6 @@ def main() -> None:
             comparison.get_matchup()
             comparison.get_data()
             comparison.send_post()
-            
-            if Config.SAVE_POSTS:
-                comparison.save_entry()
                 
             logger.info(f"Successfully completed processing for division: {division}")
             
