@@ -25,6 +25,10 @@ venv/
 ENV/
 env/
 
+# Ignore the virtual environment folder
+frenchgrid/
+
+
 # Environment Variables
 .env
 
