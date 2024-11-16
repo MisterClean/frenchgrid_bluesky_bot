@@ -1,0 +1,21 @@
+# List of European countries to compare with France
+countries:
+  - DE  # Germany
+  - ES  # Spain
+  - IT  # Italy
+  - GB  # Great Britain
+  - NL  # Netherlands
+  - BE  # Belgium
+  - PL  # Poland
+  - DK  # Denmark
+  - SE  # Sweden
+  - NO  # Norway
+
+# Posting configuration
+post_interval_hours: 6
+
+# Logging configuration
+logging:
+  level: INFO
+  format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+  file: 'bot.log'
