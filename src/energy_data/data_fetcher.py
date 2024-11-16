@@ -46,7 +46,8 @@ def get_data(zones: List[str]) -> List[Dict[str, Any]]:
         List of dictionaries containing processed energy data for each zone
         
     Raises:
-        requests.exceptions.RequestException: If API request fails
+        ValueError: If no valid data could be fetched for any zone
+        RuntimeError: If the Electricity Maps API health check fails
     """
     client = ElectricityMapsClient()
     
@@ -59,6 +60,9 @@ def get_data(zones: List[str]) -> List[Dict[str, Any]]:
         try:
             # Get zone data
             data = client.get_zone_data(zone)
+            
+            # Log raw data for debugging
+            logger.debug(f"Raw data for zone {zone}: {data}")
             
             # Get power production breakdown
             production = data.get('powerProduction', {})
@@ -78,6 +82,7 @@ def get_data(zones: List[str]) -> List[Dict[str, Any]]:
                 logger.warning(f"No carbon intensity data available for zone {zone}")
                 continue
             
+            # Append processed data to results
             result.append({
                 "country": zone,
                 "co2": int(co2),
@@ -86,11 +91,15 @@ def get_data(zones: List[str]) -> List[Dict[str, Any]]:
                 "fossil_free_pct": data.get('fossilFreePercentage', 0)
             })
             
+        except KeyError as e:
+            logger.error(f"Missing expected field in data for zone {zone}: {e}")
+            continue
         except Exception as e:
             logger.error(f"Error fetching data for zone {zone}: {str(e)}")
             continue
     
     if not result:
+        logger.error("No valid data could be fetched for any zone")
         raise ValueError("No valid data could be fetched for any zone")
     
     return result
