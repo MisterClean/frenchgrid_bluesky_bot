@@ -1,15 +1,9 @@
 # List of European countries to compare with France
 countries:
-  - DE  # Germany
-  - ES  # Spain
-  - IT  # Italy
-  - GB  # Great Britain
-  - NL  # Netherlands
-  - BE  # Belgium
-  - PL  # Poland
-  - DK  # Denmark
-  - SE  # Sweden
-  - NO  # Norway
+  - "BE"
+  - "DE"
+  - "IT"
+  - "ES"
 
 # Posting configuration
 post_interval_hours: 6
@@ -19,3 +13,28 @@ logging:
   level: INFO
   format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
   file: 'bot.log'
+
+emojis:
+  thresholds:
+    very_low: 100
+    low: 200
+    medium: 400
+  symbols:
+    very_low: "🟢"
+    low: "🟡"
+    medium: "🟠"
+    high: "🔴"
+  power_sources:
+    nuclear: "⚛️"
+    hydro: "🌊"
+    gas: "🔥"
+    wind: "💨"
+    coal: "🪨"
+    oil: "🛢️"
+    solar: "☀️"
+    biomass: "🔥"
+    geothermal: "🌋"
+    battery_storage: "🔋"
+    hydro_storage: "🌊"
+
+account_tag: "@electricitymaps.bsky.social"
