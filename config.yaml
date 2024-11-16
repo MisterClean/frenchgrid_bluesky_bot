@@ -1,9 +1,27 @@
+# Configure the base country that will appear in all posts
+base_country: "FR"
+
 # List of European countries to compare with France
 countries:
-  - "BE"
-  - "DE"
-  - "IT"
-  - "ES"
+  - DE
+  - BE
+  - ES
+  - IT
+  - GB
+  - NL
+  - PL
+  - PT
+
+country_names:
+  FR: "France"
+  DE: "Germany"
+  BE: "Belgium"
+  ES: "Spain"
+  IT: "Italy"
+  GB: "Britain"
+  NL: "Netherlands"
+  PL: "Poland"
+  PT: "Portugal"
 
 # Posting configuration
 post_interval_hours: 6
