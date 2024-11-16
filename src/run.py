@@ -6,10 +6,11 @@ import os
 from os import getcwd
 import logging
 from typing import Dict, Any
-from energy_data.matchup import get_matchup
-from energy_data.data_fetcher import get_data
-from social.bluesky_client import send_bluesky_post
-from config import Config
+
+from .energy_data.matchup import get_matchup
+from .energy_data.data_fetcher import get_data
+from .social.bluesky_client import send_bluesky_post
+from .config import Config
 
 # Configure logging
 logging.basicConfig(

@@ -24,17 +24,27 @@ class ElectricityMapsClient:
         Check if the Electricity Maps API is healthy.
         
         Returns:
-            bool: True if API is healthy, False otherwise
+            bool: True if API is healthy, False otherwise.
         """
         try:
+            # Use the correct URL for the health check
             response = requests.get(
-                f"{self.BASE_URL}/health"
+                "https://api.electricitymap.org/health",  # No /v3 for health
+                headers=self.headers
             )
+            response.raise_for_status()  # Raise an error for HTTP codes 4xx/5xx
             data = response.json()
-            return (data.get('status') == 'ok' and 
-                   data.get('monitors', {}).get('state') == 'ok')
-        except Exception:
+            
+            # Log data for debugging
+            print(f"Health endpoint response: {data}")
+            
+            return data.get('status') == 'ok' and \
+                data.get('monitors', {}).get('state') == 'ok'
+        except requests.RequestException as e:
+            # Log error for debugging
+            print(f"Error checking health: {e}")
             return False
+
     
     def get_carbon_intensity(self, zone: str) -> Dict[str, Any]:
         """
