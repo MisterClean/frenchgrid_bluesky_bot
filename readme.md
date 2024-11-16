@@ -6,15 +6,23 @@ A Bluesky bot that posts regular updates comparing the carbon intensity of Franc
 - Top 3 power sources and their percentages
 - Visual indicators for carbon intensity levels
 - Country flags
+- Posting time in UTC
+- Configurable emojis for different power sources
 
 ## Example Post
 
 ```
-🇫🇷 FRANCE: 28g CO2/kWh 🟢 using 73% Nuclear, 12% Solar and 7% Hydro.
+🇫🇷 FRANCE: 28g CO2/kWh 🟢
+⚛️ 73% Nuclear
+🌊 12% Hydro
+🔥 7% Gas
 
-🇩🇪 GERMANY: 320g CO2/kWh 🔴 using 40% Wind, 20% Coal and 16% Solar.
+🇩🇪 GERMANY: 320g CO2/kWh 🔴
+💨 40% Wind
+🪨 20% Coal
+☀️ 16% Solar
 
-Provided by @ElectricityMaps, data is about live consumption for the past hour as of 14:00 UTC
+@electricitymaps.bsky.social (14:00 UTC)
 ```
 
 ## Setup
@@ -45,6 +53,9 @@ The `config.yaml` file allows you to configure:
 - List of European countries to compare with France
 - Posting interval (in hours)
 - Logging settings
+- Emojis for different power sources
+- Thresholds for carbon intensity levels
+- Account tag to be mentioned in posts
 
 ## Running the Bot
 
