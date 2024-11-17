@@ -1,0 +1,34 @@
+name: Deploy to Lightsail
+
+on:
+  push:
+    branches:
+      - main  # You can change this to your desired branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up SSH key
+      uses: shimataro/ssh-key-action@v2
+      with:
+        key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+        known_hosts: 'github.com'
+
+    - name: Deploy to Lightsail
+      env:
+        LIGHTSAIL_IP: ${{ secrets.LIGHTSAIL_IP }}
+      run: |
+        ssh -o StrictHostKeyChecking=no ubuntu@${{ env.LIGHTSAIL_IP }} << 'EOF'
+          cd /home/ubuntu/bots/frenchgrid_bluesky_bot
+          git pull origin main
+          # Activate the virtual environment and install/update dependencies
+          source ~/bots/frenchgrid_venv/bin/activate
+          pip install -r requirements.txt
+          # Optionally restart the bot service if using systemd
+          sudo systemctl restart frenchgrid-bot
+        EOF
