@@ -24,11 +24,16 @@ jobs:
         LIGHTSAIL_IP: ${{ secrets.LIGHTSAIL_IP }}
       run: |
         ssh -o StrictHostKeyChecking=no ubuntu@${{ env.LIGHTSAIL_IP }} << 'EOF'
+          # Navigate to the bot directory
           cd /home/ubuntu/bots/frenchgrid_bluesky_bot
+          
+          # Pull the latest code
           git pull origin main
+          
           # Activate the virtual environment and install/update dependencies
           source ~/bots/frenchgrid_venv/bin/activate
           pip install -r requirements.txt
-          # Optionally restart the bot service if using systemd
-          sudo systemctl restart frenchgrid-bot
+          
+          # Restart the bot using PM2
+          pm2 restart frenchgrid_bluesky_bot || pm2 start /home/ubuntu/bots/frenchgrid_bluesky_bot/src/main.py --name frenchgrid_bluesky_bot
         EOF
