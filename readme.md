@@ -1,6 +1,6 @@
 # French Grid Bluesky Bot
 
-A Bluesky bot that posts regular updates comparing the carbon intensity of France's electrical grid with other European countries. The bot fetches data from ElectricityMaps API every 6 hours and creates posts showing:
+A Bluesky bot that posts regular updates comparing the carbon intensity of France's electrical grid with other European countries. The bot fetches data from ElectricityMaps API on a configurable schedule and creates posts showing:
 
 - Carbon intensity (gCO2/kWh) for both countries
 - Top 3 power sources and their percentages
@@ -22,7 +22,7 @@ A Bluesky bot that posts regular updates comparing the carbon intensity of Franc
 🪨 20% Coal
 ☀️ 16% Solar
 
-@electricitymaps.bsky.social (14:00 UTC)
+Data [Electricity Maps](https://app.electricitymaps.com/) (14:00 UTC)
 ```
 
 ## Setup

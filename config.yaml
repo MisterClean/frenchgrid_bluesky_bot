@@ -24,7 +24,7 @@ country_names:
   PT: "Portugal"
 
 # Posting configuration
-post_interval_hours: 6
+post_interval_hours: 4
 
 # Logging configuration
 logging:
@@ -54,5 +54,3 @@ emojis:
     geothermal: "🌋"
     battery_storage: "🔋"
     hydro_storage: "🌊"
-
-account_tag: "@electricitymaps.bsky.social"

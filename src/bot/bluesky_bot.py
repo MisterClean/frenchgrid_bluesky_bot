@@ -32,7 +32,6 @@ class BlueskyBot:
         try:
             with open("config.yaml", "r") as f:
                 config = yaml.safe_load(f)
-                self.account_tag = config.get("account_tag", "@electricitymaps.bsky.social")
         except Exception as e:
             logger.error(f"Failed to load config: {str(e)}")
             raise
@@ -55,65 +54,55 @@ class BlueskyBot:
                     raise e
         raise Exception("Max retries exceeded. Could not log in to Bluesky.")
 
-    def resolve_handle_to_did(self, handle: str) -> Optional[str]:
-        """Resolve a Bluesky handle to its DID."""
-        clean_handle = handle.lstrip("@")
-        try:
-            response = httpx.get(
-                "https://bsky.social/xrpc/com.atproto.identity.resolveHandle",
-                params={"handle": clean_handle},
-            )
-            response.raise_for_status()
-            return response.json().get("did")
-        except httpx.RequestError as e:
-            logger.error(f"Error resolving handle '{handle}': {str(e)}")
-            return None
-        except httpx.HTTPStatusError as e:
-            logger.error(f"HTTP error when resolving handle '{handle}': {str(e)}")
-            return None
-
     def create_post(self, text: str):
-        """Create a new post on Bluesky with mention."""
+        """Create a new post on Bluesky with a link to ElectricityMaps."""
         try:
-            # Resolve the DID of the account tag from config.yaml
-            did = self.resolve_handle_to_did(self.account_tag)
-            if not did:
-                logger.error(f"Failed to resolve DID for handle: {self.account_tag}")
-                return
+            # Find byte indices for the link text
+            link_text = "Electricity Maps"
+            byte_text = text.encode('utf-8')
+            text_pos = text.find(link_text)
+            
+            if text_pos == -1:
+                raise ValueError(f"Could not find '{link_text}' in text: {text}")
+                
+            # Calculate byte positions
+            byte_start = len(text[:text_pos].encode('utf-8'))
+            byte_end = byte_start + len(link_text.encode('utf-8'))
+            
+            # Create facet for the link
+            facets = [{
+                'index': {
+                    'byteStart': byte_start,
+                    'byteEnd': byte_end
+                },
+                'features': [{
+                    '$type': 'app.bsky.richtext.facet#link',
+                    'uri': 'https://app.electricitymaps.com/'
+                }]
+            }]
 
-            # Encode text to bytes and calculate byte positions for the mention
-            text_bytes = text.encode("utf-8")
-            mention_bytes = self.account_tag.encode("utf-8")
+            # Create the post record
+            record = {
+                'text': text,
+                'facets': facets,
+                'createdAt': datetime.now(timezone.utc).isoformat(),
+                '$type': 'app.bsky.feed.post'
+            }
 
-            mention_start = text_bytes.find(mention_bytes)
-            mention_end = mention_start + len(mention_bytes)
+            # Create the post with proper data structure
+            data = {
+                'collection': 'app.bsky.feed.post',
+                'repo': self.client.me.did,
+                'record': record
+            }
 
-            # Create facet for mention using byte positions
-            facets = [
-                {
-                    "index": {
-                        "byteStart": mention_start,
-                        "byteEnd": mention_end,
-                    },
-                    "features": [
-                        {
-                            "$type": "app.bsky.richtext.facet#mention",
-                            "did": did,
-                        }
-                    ],
-                }
-            ]
-
-            # Send the post using the correct parameters
-            self.client.send_post(
-                text=text,
-                facets=facets
-            )
+            # Send the post
+            self.client.com.atproto.repo.create_record(data=data)
             logger.info("Successfully posted to Bluesky")
 
             if os.getenv("SAVE_POSTS", "false").lower() == "true":
                 self._save_post(text)
-                
+
         except Exception as e:
             logger.error(f"Failed to post to Bluesky: {str(e)}")
             raise

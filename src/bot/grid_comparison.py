@@ -15,7 +15,6 @@ class GridComparison:
         self.countries = self._load_config("countries")
         self.base_country = self._load_config("base_country")
         self.emojis = self._load_config("emojis")
-        self.account_tag = self._load_config("account_tag")
         self.power_source_emojis = self.emojis.get("power_sources", {})
         self.country_names = self._load_config("country_names")
 
@@ -136,7 +135,7 @@ class GridComparison:
                 f"{base_sources}\n\n"
                 f"{self._get_country_flag(comparison_country)} {comp_country_name}: {comp_intensity_value:.0f}g CO2/kWh {self._get_intensity_emoji(comp_intensity_value)}\n"
                 f"{comp_sources}\n\n"
-                f"Data: {self.account_tag} ({utc_time})"
+                f"Data: Electricity Maps ({utc_time})"
             )
 
             # Truncate post if needed to fit within 300 graphemes
