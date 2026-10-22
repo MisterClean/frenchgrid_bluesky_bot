@@ -1,0 +1,16 @@
+[Unit]
+Description=Install a tested Frenchgrid release
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /usr/local/libexec/frenchgrid-bot-update.py
+UMask=0077
+MemoryMax=192M
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/frenchgrid-bot /var/lib/frenchgrid-bot /etc/systemd/system
+TimeoutStartSec=300

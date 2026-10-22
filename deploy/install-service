@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ $EUID != 0 ]]; then
+  echo 'Run this installer with sudo.' >&2
+  exit 1
+fi
+source_dir=$(cd -- "$(dirname -- "$0")/.." && pwd)
+commit=${1:?Pass the full approved release commit}
+[[ $commit =~ ^[0-9a-f]{40}$ ]]
+test -s /etc/frenchgrid-bot.env
+
+if ! id frenchgrid-bot >/dev/null 2>&1; then
+  useradd --system --user-group --home-dir /var/lib/frenchgrid-bot --shell /usr/sbin/nologin frenchgrid-bot
+fi
+install -d -m 0755 /opt/frenchgrid-bot/releases
+install -d -m 0700 -o frenchgrid-bot -g frenchgrid-bot /var/lib/frenchgrid-bot
+release=/opt/frenchgrid-bot/releases/$commit
+[[ $source_dir == "$release" ]]
+if [[ ! -f $release/.complete ]]; then
+  python3 -m venv "$release/.venv"
+  "$release/.venv/bin/python" -m pip install --only-binary=:all: --require-hashes -r "$release/requirements.txt"
+  "$release/.venv/bin/python" -m pip check
+  touch "$release/.complete"
+fi
+if [[ ! -e /var/lib/frenchgrid-bot/config.yaml ]]; then
+  install -m 0640 -o root -g frenchgrid-bot "$release/config.yaml" /var/lib/frenchgrid-bot/config.yaml
+fi
+install -m 0644 "$release/deploy/frenchgrid-bot.service" /etc/systemd/system/frenchgrid-bot.service
+if [[ -L /opt/frenchgrid-bot/current ]]; then
+  ln -sfn "$(readlink -f /opt/frenchgrid-bot/current)" /opt/frenchgrid-bot/previous
+fi
+ln -sfn "$release" /opt/frenchgrid-bot/current.new
+mv -Tf /opt/frenchgrid-bot/current.new /opt/frenchgrid-bot/current
+systemctl daemon-reload
+if [[ ${2:-} == --activate ]]; then
+  systemctl enable frenchgrid-bot.service
+  systemctl restart frenchgrid-bot.service
+  systemctl is-active --quiet frenchgrid-bot.service
+fi

@@ -82,3 +82,23 @@ Logs are written to `bot.log` with configurable log levels and format. The loggi
 ## License
 
 MIT License
+
+
+## Runtime security and deployment
+
+Use Ubuntu's patched Python 3.12 and the hash-locked `requirements.txt`.
+Regenerate it with `uv pip compile --python-version 3.12 --universal --upgrade --generate-hashes requirements.in -o requirements.txt`.
+Run `python -m unittest discover -s tests -v` without production credentials.
+
+The dedicated systemd service runs as `frenchgrid-bot`, with immutable releases
+under `/opt/frenchgrid-bot/releases`, private credentials in
+`/etc/frenchgrid-bot.env` (root-owned, mode 0600), and writable state/logs only
+under `/var/lib/frenchgrid-bot`. The installer preserves the existing config.
+
+For the initial migration, provision the environment file privately, stop the
+legacy PM2 publisher, then extract the tested source release into `/opt/frenchgrid-bot/releases/<commit>`
+and run `sudo bash deploy/install-service <commit> --activate` from that release.
+Never run both supervisors simultaneously. Subsequent tested main commits publish immutable releases. A restricted host
+timer polls their manifest, verifies the archive checksum, and runs the same
+installer. CI needs no inbound SSH or production SSH private key. Enable
+`frenchgrid-bot-update.timer` only after the initial PM2 migration is complete.

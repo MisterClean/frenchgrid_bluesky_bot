@@ -1,39 +1,45 @@
-name: Deploy to Lightsail
-
+name: Test and deploy
 on:
   push:
-    branches:
-      - main  # You can change this to your desired branch
-
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
 jobs:
-  deploy:
-    runs-on: ubuntu-latest
-
+  test:
+    runs-on: ubuntu-24.04
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
-
-    - name: Set up SSH key
-      uses: shimataro/ssh-key-action@v2
-      with:
-        key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
-        known_hosts: 'github.com'
-
-    - name: Deploy to Lightsail
-      env:
-        LIGHTSAIL_IP: ${{ secrets.LIGHTSAIL_IP }}
-      run: |
-        ssh -o StrictHostKeyChecking=no ubuntu@${{ env.LIGHTSAIL_IP }} << 'EOF'
-          # Navigate to the bot directory
-          cd /home/ubuntu/bots/frenchgrid_bluesky_bot
-          
-          # Pull the latest code
-          git pull origin main
-          
-          # Activate the virtual environment and install/update dependencies
-          source ~/bots/frenchgrid_venv/bin/activate
-          pip install -r requirements.txt
-          
-          # Restart the bot using PM2
-          pm2 restart frenchgrid_bluesky_bot || pm2 start /home/ubuntu/bots/frenchgrid_bluesky_bot/src/main.py --name frenchgrid_bluesky_bot
-        EOF
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --require-hashes -r requirements.txt
+      - run: python -m pip check
+      - run: python -m unittest discover -s tests -v
+      - run: bash -n deploy/install-service
+  release:
+    needs: test
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+      - name: Publish tested immutable source release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)" = "$GITHUB_SHA"
+          mkdir dist
+          git archive --format=tar.gz HEAD > dist/frenchgrid-bot.tar.gz
+          python3 - <<'PYTHON'
+          import hashlib, json, os, pathlib
+          archive = pathlib.Path('dist/frenchgrid-bot.tar.gz')
+          manifest = dict(commit=os.environ['GITHUB_SHA'], sha256=hashlib.sha256(archive.read_bytes()).hexdigest())
+          pathlib.Path('dist/manifest.json').write_text(json.dumps(manifest) + '\n')
+          PYTHON
+          if ! gh release view "build-$GITHUB_SHA" >/dev/null 2>&1; then
+            gh release create "build-$GITHUB_SHA" dist/* --target "$GITHUB_SHA" --latest --title "Tested build ${GITHUB_SHA:0:12}" --notes 'Hash-locked Python dependencies and isolated systemd service; no credentials or runtime state.'
+          fi
