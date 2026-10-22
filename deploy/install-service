@@ -13,7 +13,7 @@ test -s /etc/frenchgrid-bot.env
 if ! id frenchgrid-bot >/dev/null 2>&1; then
   useradd --system --user-group --home-dir /var/lib/frenchgrid-bot --shell /usr/sbin/nologin frenchgrid-bot
 fi
-install -d -m 0755 /opt/frenchgrid-bot/releases
+install -d -m 0755 /opt/frenchgrid-bot /opt/frenchgrid-bot/releases
 install -d -m 0700 -o frenchgrid-bot -g frenchgrid-bot /var/lib/frenchgrid-bot
 release=/opt/frenchgrid-bot/releases/$commit
 [[ $source_dir == "$release" ]]
@@ -23,6 +23,9 @@ if [[ ! -f $release/.complete ]]; then
   "$release/.venv/bin/python" -m pip check
   touch "$release/.complete"
 fi
+# Releases contain only public source and dependencies. A root umask must not
+# prevent the unprivileged service from reading its interpreter and code.
+chmod -R a+rX,go-w "$release"
 if [[ ! -e /var/lib/frenchgrid-bot/config.yaml ]]; then
   install -m 0640 -o root -g frenchgrid-bot "$release/config.yaml" /var/lib/frenchgrid-bot/config.yaml
 fi
