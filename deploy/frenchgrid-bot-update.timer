@@ -1,0 +1,10 @@
+[Unit]
+Description=Check for tested Frenchgrid releases
+
+[Timer]
+OnBootSec=10min
+OnUnitActiveSec=15min
+RandomizedDelaySec=60
+
+[Install]
+WantedBy=timers.target

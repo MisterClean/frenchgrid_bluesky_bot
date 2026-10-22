@@ -1,0 +1,8 @@
+# Direct runtime dependencies; requirements.txt is the universal Python 3.12 lock.
+atproto>=0.0.73,<0.1
+httpx>=0.28.1,<1
+python-dotenv>=1.2.1,<2
+PyYAML>=6.0.3,<7
+# Security floors also cover bundled OpenSSL and HTTP parsing.
+cryptography>=50.0.2
+h11>=0.16.0
